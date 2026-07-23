@@ -1,3 +1,6 @@
+"use client";
+
+import { useUser } from "@clerk/nextjs";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
@@ -20,6 +23,14 @@ interface ChatWindowProps {
 }
 
 export default function ChatWindow({ messages }: ChatWindowProps) {
+  const { user } = useUser();
+
+  const userLetter =
+    user?.firstName?.charAt(0).toUpperCase() ||
+    user?.username?.charAt(0).toUpperCase() ||
+    user?.emailAddresses?.[0]?.emailAddress?.charAt(0).toUpperCase() ||
+    "U";
+
   return (
     <div className="flex-1 overflow-y-auto overflow-x-hidden bg-[#0b0b0d] px-8 py-10">
       <div className="mx-auto w-full max-w-5xl">
@@ -66,13 +77,25 @@ export default function ChatWindow({ messages }: ChatWindowProps) {
                 {/* Avatar */}
 
                 <div
-                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full font-bold text-white ${
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full font-bold text-white ${
                     message.role === "user"
                       ? "bg-blue-600"
                       : "bg-zinc-700"
                   }`}
                 >
-                  {message.role === "user" ? "R" : "🤖"}
+                  {message.role === "user" ? (
+                    user?.imageUrl ? (
+                      <img
+                        src={user.imageUrl}
+                        alt="Profile"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      userLetter
+                    )
+                  ) : (
+                    "🤖"
+                  )}
                 </div>
 
                 {/* Bubble */}

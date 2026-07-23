@@ -7,6 +7,7 @@ import TopBar from "@/components/topbar/topbar";
 import ChatWindow from "@/components/chat/chat-window";
 import ChatInput from "@/components/chat/chat-input";
 import StatusPanel from "@/components/preview/status-panel";
+import SubscribeModal from "@/components/modals/subscribe-modal";
 
 type ThinkingType = "default" | "script" | "debug" | "ideas";
 
@@ -119,7 +120,7 @@ const messages = currentProject?.messages || [];
   // UI
   const [showSettings, setShowSettings] = useState(false);
   const [showNewProject, setShowNewProject] = useState(false);
-
+const [showSubscribeModal, setShowSubscribeModal] = useState(false);
   // Modal Inputs
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
@@ -209,6 +210,7 @@ async function sendMessage(message: string) {
 
   const thinkingType = getThinkingType(message);
 
+  // Add user message + loading message
   setProjects((prev) =>
     prev.map((project) => {
       if (project.id !== currentProjectId) return project;
@@ -241,10 +243,40 @@ async function sendMessage(message: string) {
       body: JSON.stringify({ message }),
     });
 
+    // ===========================
+    // Subscription Required
+    // ===========================
+    if (response.status === 403) {
+      const data = await response.json();
+
+      setProjects((prev) =>
+        prev.map((project) => {
+          if (project.id !== currentProjectId) return project;
+
+          const updatedMessages = [...project.messages];
+
+          updatedMessages[updatedMessages.length - 1] = {
+            role: "assistant",
+            content: data.reply,
+          };
+
+          return {
+            ...project,
+            messages: updatedMessages,
+          };
+        })
+      );
+
+      setShowSubscribeModal(true);
+      return;
+    }
+
+    // Other API errors
     if (!response.ok) {
       throw new Error();
     }
 
+    // Successful AI response
     const data = await response.json();
 
     setProjects((prev) =>
@@ -264,7 +296,9 @@ async function sendMessage(message: string) {
         };
       })
     );
-  } catch {
+  } catch (err) {
+    console.error(err);
+
     setProjects((prev) =>
       prev.map((project) => {
         if (project.id !== currentProjectId) return project;
@@ -429,11 +463,16 @@ async function sendMessage(message: string) {
             >
               Done
             </button>
-
+<SubscribeModal
+  open={showSubscribeModal}
+  onClose={() => setShowSubscribeModal(false)}
+/>
           </div>
         </div>
       </div>
-    )}
+  
+   )}
+  
   </>
 );
 }
