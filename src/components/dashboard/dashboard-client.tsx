@@ -70,6 +70,21 @@ const [projects, setProjects] = useState<Project[]>([]);
 const [currentProjectId, setCurrentProjectId] =
   useState<string | null>(null);
 
+
+  useEffect(() => {
+  async function syncUser() {
+    try {
+      await fetch("/api/sync-user", {
+        method: "POST",
+      });
+    } catch (err) {
+      console.error("Failed to sync user:", err);
+    }
+  }
+
+  syncUser();
+}, []);
+
   useEffect(() => {
   const savedProjects = localStorage.getItem("buildblox-projects");
   const savedCurrentProject = localStorage.getItem("buildblox-current");
